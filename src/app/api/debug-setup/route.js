@@ -1,7 +1,7 @@
 import dbConnect from '@/lib/mongodb';
 import Destination from '@/models/Destination';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from './auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/route';
 import UserSchema from '@/models/UserSchema';
 import mongoose from 'mongoose';
 

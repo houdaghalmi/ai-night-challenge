@@ -8,10 +8,8 @@ export default function RecommendationsDisplayGoogle() {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Start with curated database, only use Google if API key exists
-  const [useGoogleAPI, setUseGoogleAPI] = useState(
-    !!process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
-  );
+  // Start with curated database by default (safer)
+  const [useGoogleAPI, setUseGoogleAPI] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -108,22 +106,11 @@ export default function RecommendationsDisplayGoogle() {
             Discover Tunisia destinations perfectly matched to your preferences
           </p>
           <div className="flex justify-center gap-4">
-            {process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY &&
-              process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY !== 'your_google_places_api_key_here' &&
-              process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY.length > 10 && (
-                <button
-                  onClick={() => setUseGoogleAPI(true)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition ${
-                    useGoogleAPI
-                      ? 'bg-[#c7a667] text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Google Places (Real-time)
-                </button>
-              )}
             <button
-              onClick={() => setUseGoogleAPI(false)}
+              onClick={() => {
+                setUseGoogleAPI(false);
+                setLoading(true);
+              }}
               className={`px-4 py-2 rounded-lg font-semibold transition ${
                 !useGoogleAPI
                   ? 'bg-[#c7a667] text-white'
@@ -131,6 +118,19 @@ export default function RecommendationsDisplayGoogle() {
               }`}
             >
               Curated Database
+            </button>
+            <button
+              onClick={() => {
+                setUseGoogleAPI(true);
+                setLoading(true);
+              }}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                useGoogleAPI
+                  ? 'bg-[#c7a667] text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Google Places (Real-time)
             </button>
           </div>
         </div>
