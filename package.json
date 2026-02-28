@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "lucide-react": "^0.575.0",
     "mongoose": "^9.2.3",
     "next": "16.1.6",
     "next-auth": "^4.24.13",

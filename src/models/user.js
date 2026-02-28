@@ -46,11 +46,31 @@ export const User = {
       id: user._id.toString(),
       name: user.name,
       email: user.email,
+      onboardingCompleted: user.onboardingCompleted || false,
     };
   },
 
   async validatePassword(password, hashedPassword) {
     const bcrypt = require('bcryptjs');
     return await bcrypt.compare(password, hashedPassword);
-  }
+  },
+
+  async updateOnboardingStatus(userId, status = true) {
+    await dbConnect();
+    
+    const user = await UserSchema.findByIdAndUpdate(
+      userId,
+      { onboardingCompleted: status },
+      { new: true }
+    );
+    
+    return user;
+  },
+
+  async getOnboardingStatus(userId) {
+    await dbConnect();
+    
+    const user = await UserSchema.findById(userId).select('onboardingCompleted');
+    return user?.onboardingCompleted || false;
+  },
 };

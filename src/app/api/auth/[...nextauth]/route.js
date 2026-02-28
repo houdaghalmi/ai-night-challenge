@@ -41,6 +41,9 @@ export const authOptions = {
   pages: {
     signIn: "/auth/login",
   },
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -53,7 +56,7 @@ export const authOptions = {
       return session;
     }
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
 };
 
 const handler = NextAuth(authOptions);

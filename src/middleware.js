@@ -15,6 +15,7 @@ export const middleware = withAuth(
 );
 
 // Protect routes that require authentication
+// Dashboard and profile routes require users to exist, but onboarding must be completed separately
 export const config = {
-  matcher: ['/dashboard/:path*', '/profile/:path*'],
+  matcher: ['/dashboard/:path*', '/profile/:path*', '/onboarding/:path*', '/recommendations/:path*'],
 };

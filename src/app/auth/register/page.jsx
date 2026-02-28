@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import { User, Mail, Lock, Loader2, Compass, ShieldCheck } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,15 +30,14 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
 
-    // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Les sceaux de sécurité ne correspondent pas (mots de passe différents).');
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('Votre clé doit comporter au moins 6 caractères.');
       setLoading(false);
       return;
     }
@@ -55,11 +55,10 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        setError(data.message || 'Registration failed');
+        setError(data.message || "Échec de l'enregistrement du voyageur.");
         return;
       }
 
-      // Auto sign in after registration
       const signInResult = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
@@ -67,125 +66,153 @@ export default function RegisterPage() {
       });
 
       if (signInResult?.ok) {
-        router.push('/');
+        router.push('/onboarding');
       } else {
-        setError(signInResult?.error || 'Sign in failed');
+        setError(signInResult?.error || 'Connexion automatique échouée.');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError('Un obstacle imprévu bloque votre inscription.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#10202d' }}>
-      <div className="w-full max-w-md p-8" style={{ backgroundColor: '#f7f7f7' }}>
-        <h1 className="text-3xl font-bold mb-6 text-center" style={{ color: '#10202d' }}>
-          Register
-        </h1>
+    <div className="min-h-screen bg-[#f4e4bc] flex items-center justify-center p-4 md:p-12 relative overflow-hidden">
+      {/* Éléments de fond décoratifs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] border-[1px] border-[#c7a667]/20 rounded-full" />
+      <div className="absolute bottom-[-5%] right-[-5%] w-[300px] h-[300px] border-[1px] border-[#c7a667]/20 rounded-full" />
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
+      {/* Carte d'Invitation / Inscription */}
+      <div className="relative w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-[#fffdf5] rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border-[1px] border-[#e2d1a4] overflow-hidden">
+        
+        {/* Section Image : Identique au Login pour la cohérence */}
+        <div className="relative hidden md:block group">
+          <img
+            src="/assests/robot.png"
+            alt="Exploration Tunisie"
+            className="h-full w-full object-cover grayscale-[10%] transition-transform duration-700 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#fffdf5]" />
+          
+  
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#10202d' }}>
-              Full Name
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                borderColor: '#c7a667',
-                '--tw-ring-color': '#c7a667',
-              }}
-              placeholder="Your name"
-            />
-          </div>
+        {/* Section Formulaire */}
+        <div className="relative p-10 md:p-16 flex flex-col justify-center">
+          {/* Ornements de coins */}
+          <div className="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-[#c7a667] rounded-tl-xl" />
+          <div className="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-[#c7a667] rounded-br-xl" />
 
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#10202d' }}>
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                borderColor: '#c7a667',
-                '--tw-ring-color': '#c7a667',
-              }}
-              placeholder="your@email.com"
-            />
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-serif text-[#5d4037] mb-2">Laissez-passer</h1>
+            <div className="h-[2px] w-20 bg-gradient-to-r from-transparent via-[#c7a667] to-transparent mx-auto mb-3" />
+            <p className="text-[#8d6e63] font-serif italic">
+              "Inscrivez votre nom dans les annales du voyage"
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#10202d' }}>
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                borderColor: '#c7a667',
-                '--tw-ring-color': '#c7a667',
-              }}
-              placeholder="At least 6 characters"
-            />
+          {error && (
+            <div className="mb-6 flex items-center gap-3 rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
+              <ShieldCheck size={18} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Nom Complet */}
+            <div className="relative border-b-2 border-[#e2d1a4] focus-within:border-[#c7a667] transition-all">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-[#b8935a] ml-1">Nom du Voyageur</label>
+              <div className="flex items-center">
+                <User size={18} className="text-[#c7a667] mr-3" />
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Votre nom complet"
+                  className="w-full bg-transparent py-2 outline-none text-[#5d4037] placeholder:text-[#8d6e63]/40 font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="relative border-b-2 border-[#e2d1a4] focus-within:border-[#c7a667] transition-all">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-[#b8935a] ml-1">Courrier de Liaison</label>
+              <div className="flex items-center">
+                <Mail size={18} className="text-[#c7a667] mr-3" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="votre@email.com"
+                  className="w-full bg-transparent py-2 outline-none text-[#5d4037] placeholder:text-[#8d6e63]/40 font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Mot de passe */}
+            <div className="relative border-b-2 border-[#e2d1a4] focus-within:border-[#c7a667] transition-all">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-[#b8935a] ml-1">Clé Secrète</label>
+              <div className="flex items-center">
+                <Lock size={18} className="text-[#c7a667] mr-3" />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-transparent py-2 outline-none text-[#5d4037] placeholder:text-[#8d6e63]/40"
+                />
+              </div>
+            </div>
+
+            {/* Confirmation Mot de passe */}
+            <div className="relative border-b-2 border-[#e2d1a4] focus-within:border-[#c7a667] transition-all">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-[#b8935a] ml-1">Confirmation de la Clé</label>
+              <div className="flex items-center">
+                <ShieldCheck size={18} className="text-[#c7a667] mr-3" />
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-transparent py-2 outline-none text-[#5d4037] placeholder:text-[#8d6e63]/40"
+                />
+              </div>
+            </div>
+
+            {/* Bouton d'inscription */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full group relative bg-[#c7a667] hover:bg-[#5d4037] text-white py-4 rounded-full font-serif text-lg tracking-widest transition-all duration-300 shadow-lg mt-4 overflow-hidden"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-3">
+                {loading ? <Loader2 className="animate-spin" /> : "Obtenir mon Laissez-passer"}
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-[#8d6e63] font-serif text-sm">
+              Déjà inscrit parmi nous ?{' '}
+              <Link 
+                href="/auth/login" 
+                className="font-bold text-[#c7a667] hover:text-[#5d4037] underline decoration-dotted"
+              >
+                Connectez-vous ici
+              </Link>
+            </p>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#10202d' }}>
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                borderColor: '#c7a667',
-                '--tw-ring-color': '#c7a667',
-              }}
-              placeholder="Confirm your password"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 rounded-lg font-medium text-white transition-colors disabled:opacity-50"
-            style={{ backgroundColor: '#c7a667' }}
-            onMouseEnter={(e) => (e.target.style.backgroundColor = '#b8935a')}
-            onMouseLeave={(e) => (e.target.style.backgroundColor = '#c7a667')}
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center" style={{ color: '#10202d' }}>
-          Already have an account?{' '}
-          <Link href="/auth/login" className="font-medium hover:opacity-80" style={{ color: '#c7a667' }}>
-            Login here
-          </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
