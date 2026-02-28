@@ -3,14 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { COLORS } from '@/config/colors';
+import { useLanguage } from '@/lib/useLanguage';
+import { useTheme } from '@/lib/useTheme';
+import { translations } from '@/lib/translations';
+import { themes } from '@/lib/themes';
 
 export default function OnboardingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { language, isLoaded } = useLanguage();
+  const { theme, isLoaded: themeLoaded } = useTheme();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const t = translations[language];
+  const themeColors = themes[theme];
 
   const [formData, setFormData] = useState({
     travelerType: '',
@@ -168,24 +176,24 @@ export default function OnboardingPage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: COLORS.PRIMARY_DARK }}>
-        <div style={{ color: COLORS.LIGHT_BG }}>Loading...</div>
+      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: themeColors.bg.primary }}>
+        <div style={{ color: themeColors.text.primary }}>{t.onboarding?.loading || 'Loading...'}</div>
       </div>
     );
   }
 
   const travelerTypes = [
-    { value: 'solo', label: 'Solo Traveler' },
-    { value: 'couple', label: 'Couple' },
-    { value: 'family', label: 'Family' },
-    { value: 'friends', label: 'Friends' },
+    { value: 'solo', key: 'soloTraveler', label: 'Solo Traveler' },
+    { value: 'couple', key: 'couple', label: 'Couple' },
+    { value: 'family', key: 'family', label: 'Family' },
+    { value: 'friends', key: 'friends', label: 'Friends' },
   ];
 
   const budgetRanges = [
-    { value: 'low', label: 'Budget', desc: 'Under $50/day' },
-    { value: 'medium', label: 'Moderate', desc: '$50-150/day' },
-    { value: 'high', label: 'Premium', desc: '$150-300/day' },
-    { value: 'luxury', label: 'Luxury', desc: '$300+/day' },
+    { value: 'low', label: 'Budget', labelSuffix: 'Low', desc: 'Under $50/day' },
+    { value: 'medium', label: 'Moderate', labelSuffix: 'Medium', desc: '$50-150/day' },
+    { value: 'high', label: 'Premium', labelSuffix: 'High', desc: '$150-300/day' },
+    { value: 'luxury', label: 'Luxury', labelSuffix: 'Luxury', desc: '$300+/day' },
   ];
 
   const regions = [
@@ -197,14 +205,14 @@ export default function OnboardingPage() {
   ];
 
   const interests = [
-    { key: 'beach', label: 'Beach & Water Sports', desc: 'Swimming, diving, beach relaxation' },
-    { key: 'cultureHistory', label: 'Culture & History', desc: 'Museums, ruins, heritage sites' },
-    { key: 'desertAdventure', label: 'Desert & Adventure', desc: 'Sahara, dunes, off-road experiences' },
-    { key: 'foodGastronomy', label: 'Food & Gastronomy', desc: 'Local cuisine, cooking classes' },
-    { key: 'nightlife', label: 'Nightlife', desc: 'Bars, clubs, entertainment' },
-    { key: 'natureMountains', label: 'Nature & Mountains', desc: 'Hiking, wildlife, natural parks' },
-    { key: 'shopping', label: 'Shopping', desc: 'Souks, markets, local crafts' },
-    { key: 'relaxationSpa', label: 'Relaxation & Spa', desc: 'Wellness, hammams, thalassotherapy' },
+    { key: 'beach', transKey: 'beachWaterSports', descKey: 'beachWaterSportsDesc', label: 'Beach & Water Sports', desc: 'Swimming, diving, beach relaxation' },
+    { key: 'cultureHistory', transKey: 'cultureHistory', descKey: 'cultureHistoryDesc', label: 'Culture & History', desc: 'Museums, ruins, heritage sites' },
+    { key: 'desertAdventure', transKey: 'desertAdventure', descKey: 'desertAdventureDesc', label: 'Desert & Adventure', desc: 'Sahara, dunes, off-road experiences' },
+    { key: 'foodGastronomy', transKey: 'foodGastronomy', descKey: 'foodGastronomyDesc', label: 'Food & Gastronomy', desc: 'Local cuisine, cooking classes' },
+    { key: 'nightlife', transKey: 'nightlife', descKey: 'nightlifeDesc', label: 'Nightlife', desc: 'Bars, clubs, entertainment' },
+    { key: 'natureMountains', transKey: 'natureMountains', descKey: 'natureMountainsDesc', label: 'Nature & Mountains', desc: 'Hiking, wildlife, natural parks' },
+    { key: 'shopping', transKey: 'shopping', descKey: 'shoppingDesc', label: 'Shopping', desc: 'Souks, markets, local crafts' },
+    { key: 'relaxationSpa', transKey: 'relaxationSpa', descKey: 'relaxationSpaDesc', label: 'Relaxation & Spa', desc: 'Wellness, hammams, thalassotherapy' },
   ];
 
   const accommodationTypes = [
@@ -246,7 +254,7 @@ export default function OnboardingPage() {
           onClick={() => onChange(star)}
           className="text-2xl transition-transform hover:scale-110 focus:outline-none"
           style={{
-            color: star <= value ? COLORS.ACCENT_GOLD : '#d1d5db',
+            color: star <= value ? themeColors.accent.gold : themeColors.accent.border,
           }}
         >
           ★
@@ -255,15 +263,19 @@ export default function OnboardingPage() {
     </div>
   );
 
+  if (!isLoaded || !themeLoaded) return null;
+
   return (
-    <div className="min-h-screen py-12 px-4" style={{ backgroundColor: '#f8f9fa' }}>
+    <div className="min-h-screen py-12 px-4" style={{ backgroundColor: themeColors.bg.primary }}>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ color: COLORS.PRIMARY_DARK }}>
-            Travel Preferences
+          <h1 className="text-4xl font-bold mb-2 mt-14" style={{ color: themeColors.text.primary }}>
+            {t.onboarding?.title || 'Travel Preferences'}
           </h1>
-          <p className="text-gray-500 text-lg">Step {currentStep} of 5</p>
+          <p style={{ color: themeColors.text.secondary }}>
+            {t.onboarding?.stepOf || 'Step'} {currentStep} {t.onboarding?.of || 'of'} 5
+          </p>
         </div>
 
         {/* Horizontal Progress Indicator */}
@@ -275,9 +287,9 @@ export default function OnboardingPage() {
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center font-semibold transition-all"
                   style={{
-                    backgroundColor: step < currentStep ? COLORS.ACCENT_GOLD : 'white',
-                    border: `2px solid ${step <= currentStep ? COLORS.ACCENT_GOLD : '#d1d5db'}`,
-                    color: step < currentStep ? 'white' : (step === currentStep ? COLORS.ACCENT_GOLD : '#9ca3af'),
+                    backgroundColor: step < currentStep ? themeColors.accent.gold : themeColors.bg.primary,
+                    border: `2px solid ${step <= currentStep ? themeColors.accent.gold : themeColors.accent.border}`,
+                    color: step < currentStep ? 'white' : (step === currentStep ? themeColors.accent.gold : themeColors.text.secondary),
                   }}
                 >
                   {step}
@@ -287,7 +299,7 @@ export default function OnboardingPage() {
                   <div
                     className="w-12 h-0.5 mx-1"
                     style={{
-                      backgroundColor: step < currentStep ? COLORS.ACCENT_GOLD : '#d1d5db',
+                      backgroundColor: step < currentStep ? themeColors.accent.gold : themeColors.accent.border,
                     }}
                   />
                 )}
@@ -297,14 +309,14 @@ export default function OnboardingPage() {
         </div>
 
         {/* Main Card */}
-        <div className="rounded-lg shadow-sm p-8" style={{ backgroundColor: 'white', border: '1px solid #e5e7eb' }}>
+        <div className="rounded-lg shadow-sm p-8" style={{ backgroundColor: themeColors.bg.secondary, border: `1px solid ${themeColors.accent.border}` }}>
           {/* STEP 1: Traveler Type */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold" style={{ color: COLORS.PRIMARY_DARK }}>
-                Who are you traveling with?
+              <h2 className="text-2xl font-semibold" style={{ color: themeColors.text.primary }}>
+                {t.onboarding?.step1Title || 'Who are you traveling with?'}
               </h2>
-              <p className="text-gray-600">Choose the option that best describes your travel group</p>
+              <p style={{ color: themeColors.text.secondary }}>{t.onboarding?.step1Desc || 'Choose the option that best describes your travel group'}</p>
               <div className="grid grid-cols-2 gap-4">
                 {travelerTypes.map((type) => (
                   <button
@@ -312,11 +324,12 @@ export default function OnboardingPage() {
                     onClick={() => updateFormData('travelerType', type.value)}
                     className="p-6 rounded-lg border-2 transition-all text-center hover:border-current"
                     style={{
-                      borderColor: formData.travelerType === type.value ? COLORS.ACCENT_GOLD : '#e5e7eb',
-                      backgroundColor: formData.travelerType === type.value ? '#fef9e7' : 'white',
+                      borderColor: formData.travelerType === type.value ? themeColors.accent.gold : themeColors.accent.border,
+                      backgroundColor: formData.travelerType === type.value ? themeColors.bg.primary : themeColors.bg.secondary,
+                      color: themeColors.text.primary,
                     }}
                   >
-                    <div className="font-semibold text-lg text-gray-900">{type.label}</div>
+                    <div className="font-semibold text-lg">{t.onboarding?.[`${type.key || type.value}`] || type.label}</div>
                   </button>
                 ))}
               </div>
@@ -327,10 +340,10 @@ export default function OnboardingPage() {
           {/* STEP 2: Budget Range */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold" style={{ color: COLORS.PRIMARY_DARK }}>
-                What's your daily budget?
+              <h2 className="text-2xl font-semibold" style={{ color: themeColors.text.primary }}>
+                {t.onboarding?.step2Title || 'What\'s your daily budget?'}
               </h2>
-              <p className="text-gray-600">Select your preferred daily budget range</p>
+              <p style={{ color: themeColors.text.secondary }}>{t.onboarding?.step2Desc || 'Select your preferred daily budget range'}</p>
               <div className="grid grid-cols-2 gap-4">
                 {budgetRanges.map((budget) => (
                   <button
@@ -338,12 +351,13 @@ export default function OnboardingPage() {
                     onClick={() => updateFormData('budgetRange', budget.value)}
                     className="p-6 rounded-lg border-2 transition-all text-center hover:border-current"
                     style={{
-                      borderColor: formData.budgetRange === budget.value ? COLORS.ACCENT_GOLD : '#e5e7eb',
-                      backgroundColor: formData.budgetRange === budget.value ? '#fef9e7' : 'white',
+                      borderColor: formData.budgetRange === budget.value ? themeColors.accent.gold : themeColors.accent.border,
+                      backgroundColor: formData.budgetRange === budget.value ? themeColors.bg.primary : themeColors.bg.secondary,
+                      color: themeColors.text.primary,
                     }}
                   >
-                    <div className="font-bold text-lg text-gray-900">{budget.label}</div>
-                    <div className="text-sm text-gray-600 mt-1">{budget.desc}</div>
+                    <div className="font-bold text-lg">{t.onboarding?.[`budget${budget.labelSuffix}`] || budget.label}</div>
+                    <div className="text-sm mt-1" style={{ color: themeColors.text.secondary }}>{t.onboarding?.[`budget${budget.labelSuffix}Desc`] || budget.desc}</div>
                   </button>
                 ))}
               </div>
@@ -354,13 +368,13 @@ export default function OnboardingPage() {
           {/* STEP 3: Duration & Regions */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold mb-6" style={{ color: COLORS.PRIMARY_DARK }}>
-                Travel duration and regions
+              <h2 className="text-2xl font-semibold mb-6" style={{ color: themeColors.text.primary }}>
+                {t.onboarding?.step3Title || 'Travel duration and regions'}
               </h2>
               
               <div>
-                <label className="block text-base font-semibold mb-4" style={{ color: COLORS.PRIMARY_DARK }}>
-                  How many days will you travel?
+                <label className="block text-base font-semibold mb-4" style={{ color: themeColors.text.primary }}>
+                  {t.onboarding?.step3Desc || 'How many days will you travel?'}
                 </label>
                 <input
                   type="number"
@@ -374,15 +388,15 @@ export default function OnboardingPage() {
                     }
                   }}
                   className="w-full px-4 py-3 border-2 rounded-lg text-center text-lg font-semibold"
-                  style={{ borderColor: errors.travelDuration ? '#ef4444' : '#e5e7eb', color: 'black' }}
-                  placeholder="7"
+                  style={{ borderColor: errors.travelDuration ? '#ef4444' : themeColors.accent.border, color: themeColors.text.primary, backgroundColor: themeColors.bg.primary }}
+                  placeholder={t.onboarding?.daysPlaceholder || '7'}
                 />
                 {errors.travelDuration && <p className="text-red-500 text-sm mt-2">{errors.travelDuration}</p>}
               </div>
 
               <div>
-                <label className="block text-base font-semibold mb-4" style={{ color: COLORS.PRIMARY_DARK }}>
-                  Which regions interest you? (Select at least one)
+                <label className="block text-base font-semibold mb-4" style={{ color: themeColors.text.primary }}>
+                  {t.onboarding?.step3Title2 || 'Which regions interest you? (Select at least one)'}
                 </label>
                 <div className="space-y-3">
                   {regions.map((region) => (
@@ -396,12 +410,13 @@ export default function OnboardingPage() {
                       }}
                       className="w-full p-4 rounded-lg border-2 transition-all text-left hover:border-current"
                       style={{
-                        borderColor: formData.preferredRegions.includes(region.value) ? COLORS.ACCENT_GOLD : '#e5e7eb',
-                        backgroundColor: formData.preferredRegions.includes(region.value) ? '#fef9e7' : 'white',
+                        borderColor: formData.preferredRegions.includes(region.value) ? themeColors.accent.gold : themeColors.accent.border,
+                        backgroundColor: formData.preferredRegions.includes(region.value) ? themeColors.bg.primary : themeColors.bg.secondary,
+                        color: themeColors.text.primary,
                       }}
                     >
-                      <div className="font-semibold text-gray-900">{region.label}</div>
-                      <div className="text-sm text-gray-600">{region.desc}</div>
+                      <div className="font-semibold">{t.onboarding?.[region.key] || region.label}</div>
+                      <div className="text-sm" style={{ color: themeColors.text.secondary }}>{t.onboarding?.[region.keyDesc] || region.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -413,20 +428,20 @@ export default function OnboardingPage() {
           {/* STEP 4: Interests */}
           {currentStep === 4 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold" style={{ color: COLORS.PRIMARY_DARK }}>
-                Rate your interests
+              <h2 className="text-2xl font-semibold" style={{ color: themeColors.text.primary }}>
+                {t.onboarding?.step4Title || 'Rate your interests'}
               </h2>
-              <p className="text-gray-600">Rate from 1 (not interested) to 5 (very interested)</p>
+              <p style={{ color: themeColors.text.secondary }}>{t.onboarding?.step4Desc || 'Rate from 1 (not interested) to 5 (very interested)'}</p>
               
               {errors.interests && <p className="text-red-500 font-semibold">{errors.interests}</p>}
               
               <div className="space-y-3">
                 {interests.map((interest) => (
-                  <div key={interest.key} className="p-4 rounded-lg border-2" style={{ borderColor: '#e5e7eb' }}>
+                  <div key={interest.key} className="p-4 rounded-lg border-2" style={{ borderColor: themeColors.accent.border, backgroundColor: themeColors.bg.secondary }}>
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <span className="block font-semibold text-gray-900">{interest.label}</span>
-                        <span className="block text-sm text-gray-600">{interest.desc}</span>
+                        <span className="block font-semibold" style={{ color: themeColors.text.primary }}>{t.onboarding?.[interest.transKey] || interest.label}</span>
+                        <span className="block text-sm" style={{ color: themeColors.text.secondary }}>{t.onboarding?.[interest.descKey] || interest.desc}</span>
                       </div>
                     </div>
                     <RatingStars 
@@ -442,13 +457,13 @@ export default function OnboardingPage() {
           {/* STEP 5: Travel Style */}
           {currentStep === 5 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold mb-6" style={{ color: COLORS.PRIMARY_DARK }}>
-                Your travel preferences
+              <h2 className="text-2xl font-semibold mb-6" style={{ color: themeColors.text.primary }}>
+                {t.onboarding?.step5Title || 'Your travel preferences'}
               </h2>
 
               <div>
-                <label className="block text-base font-semibold mb-4" style={{ color: COLORS.PRIMARY_DARK }}>
-                  Accommodation types
+                <label className="block text-base font-semibold mb-4" style={{ color: themeColors.text.primary }}>
+                  {t.onboarding?.accommodationLabel || 'Accommodation types'}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {accommodationTypes.map((type) => (
@@ -462,11 +477,12 @@ export default function OnboardingPage() {
                       }}
                       className="p-4 rounded-lg border-2 transition-all text-center hover:border-current"
                       style={{
-                        borderColor: formData.accommodationType.includes(type.value) ? COLORS.ACCENT_GOLD : '#e5e7eb',
-                        backgroundColor: formData.accommodationType.includes(type.value) ? '#fef9e7' : 'white',
+                        borderColor: formData.accommodationType.includes(type.value) ? themeColors.accent.gold : themeColors.accent.border,
+                        backgroundColor: formData.accommodationType.includes(type.value) ? themeColors.bg.primary : themeColors.bg.secondary,
+                        color: themeColors.text.primary
                       }}
                     >
-                      <div className="text-sm font-semibold text-gray-900">{type.label}</div>
+                      <div className="text-sm font-semibold">{t.onboarding?.[type.key] || type.label}</div>
                     </button>
                   ))}
                 </div>
@@ -474,8 +490,8 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-base font-semibold mb-4" style={{ color: COLORS.PRIMARY_DARK }}>
-                  Transportation preference
+                <label className="block text-base font-semibold mb-4" style={{ color: themeColors.text.primary }}>
+                  {t.onboarding?.transportationLabel || 'Transportation preference'}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {transportationOptions.map((option) => (
@@ -489,11 +505,12 @@ export default function OnboardingPage() {
                       }}
                       className="p-4 rounded-lg border-2 transition-all text-center hover:border-current"
                       style={{
-                        borderColor: formData.transportationPreference.includes(option.value) ? COLORS.ACCENT_GOLD : '#e5e7eb',
-                        backgroundColor: formData.transportationPreference.includes(option.value) ? '#fef9e7' : 'white',
+                        borderColor: formData.transportationPreference.includes(option.value) ? themeColors.accent.gold : themeColors.accent.border,
+                        backgroundColor: formData.transportationPreference.includes(option.value) ? themeColors.bg.primary : themeColors.bg.secondary,
+                        color: themeColors.text.primary
                       }}
                     >
-                      <div className="text-sm font-semibold text-gray-900">{option.label}</div>
+                      <div className="text-sm font-semibold">{t.onboarding?.[option.key] || option.label}</div>
                     </button>
                   ))}
                 </div>
@@ -501,8 +518,8 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-base font-semibold mb-4" style={{ color: COLORS.PRIMARY_DARK }}>
-                  Crowd preference
+                <label className="block text-base font-semibold mb-4" style={{ color: themeColors.text.primary }}>
+                  {t.onboarding?.crowdPreference || 'Crowd preference'}
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {crowdOptions.map((option) => (
@@ -511,11 +528,12 @@ export default function OnboardingPage() {
                       onClick={() => updateFormData('crowdTolerance', option.value)}
                       className="p-4 rounded-lg border-2 transition-all text-center hover:border-current"
                       style={{
-                        borderColor: formData.crowdTolerance === option.value ? COLORS.ACCENT_GOLD : '#e5e7eb',
-                        backgroundColor: formData.crowdTolerance === option.value ? '#fef9e7' : 'white',
+                        borderColor: formData.crowdTolerance === option.value ? themeColors.accent.gold : themeColors.accent.border,
+                        backgroundColor: formData.crowdTolerance === option.value ? themeColors.bg.primary : themeColors.bg.secondary,
+                        color: themeColors.text.primary
                       }}
                     >
-                      <div className="text-xs font-semibold text-gray-900">{option.label}</div>
+                      <div className="text-xs font-semibold" style={{ color: themeColors.text.primary }}>{t.onboarding?.[option.key] || option.label}</div>
                     </button>
                   ))}
                 </div>
@@ -523,8 +541,8 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-base font-semibold mb-4" style={{ color: COLORS.PRIMARY_DARK }}>
-                  Activity level
+                <label className="block text-base font-semibold mb-4" style={{ color: themeColors.text.primary }}>
+                  {t.onboarding?.activityLevel || 'Activity level'}
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {intensityLevels.map((level) => (
@@ -533,11 +551,12 @@ export default function OnboardingPage() {
                       onClick={() => updateFormData('activityIntensity', level.value)}
                       className="p-4 rounded-lg border-2 transition-all text-center hover:border-current"
                       style={{
-                        borderColor: formData.activityIntensity === level.value ? COLORS.ACCENT_GOLD : '#e5e7eb',
-                        backgroundColor: formData.activityIntensity === level.value ? '#fef9e7' : 'white',
+                        borderColor: formData.activityIntensity === level.value ? themeColors.accent.gold : themeColors.accent.border,
+                        backgroundColor: formData.activityIntensity === level.value ? themeColors.bg.primary : themeColors.bg.secondary,
+                        color: themeColors.text.primary
                       }}
                     >
-                      <div className="text-xs font-semibold text-gray-900">{level.label}</div>
+                      <div className="text-xs font-semibold">{t.onboarding?.[level.key] || level.label}</div>
                     </button>
                   ))}
                 </div>
@@ -547,18 +566,18 @@ export default function OnboardingPage() {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex gap-4 mt-10 pt-6 border-t border-gray-200">
+          <div className="flex gap-4 mt-10 pt-6" style={{ borderTop: `1px solid ${themeColors.accent.border}` }}>
             {currentStep > 1 && (
               <button
                 onClick={handleBack}
                 className="flex-1 py-3 rounded-lg font-semibold border-2 transition-all text-base"
                 style={{
-                  borderColor: COLORS.ACCENT_GOLD,
-                  color: COLORS.ACCENT_GOLD,
-                  backgroundColor: 'white',
+                  borderColor: themeColors.accent.gold,
+                  color: themeColors.accent.gold,
+                  backgroundColor: themeColors.bg.secondary,
                 }}
               >
-                Back
+                {t.onboarding?.back || 'Back'}
               </button>
             )}
             
@@ -566,18 +585,18 @@ export default function OnboardingPage() {
               <button
                 onClick={handleNext}
                 className="flex-1 py-3 rounded-lg font-semibold text-white transition-all text-base"
-                style={{ backgroundColor: COLORS.ACCENT_GOLD }}
+                style={{ backgroundColor: themeColors.accent.gold }}
               >
-                Next
+                {t.onboarding?.next || 'Next'}
               </button>
             ) : (
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}
                 className="flex-1 py-3 rounded-lg font-semibold text-white transition-all disabled:opacity-50 text-base"
-                style={{ backgroundColor: COLORS.ACCENT_GOLD }}
+                style={{ backgroundColor: themeColors.accent.gold }}
               >
-                {isLoading ? 'Saving...' : 'Next'}
+                {isLoading ? t.onboarding?.saving || 'Saving...' : (t.onboarding?.complete || 'Complete')}
               </button>
             )}
           </div>
