@@ -18,8 +18,10 @@ export async function GET(request) {
     const userId = new mongoose.Types.ObjectId(session.user.id);
     const userPrefs = await UserSchema.findById(userId);
 
+    // If no preferences yet, return basic recommendations without user customization
     if (!userPrefs) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
+      console.warn('No user preferences found for:', session.user.id);
+      // Continue with generic scoring instead of failing
     }
 
     // Get all destinations
@@ -29,22 +31,29 @@ export async function GET(request) {
     const scoredDestinations = destinations.map((dest) => {
       let score = 0;
 
+      // Use defaults if no user preferences
+      const interests = userPrefs?.interests || {};
+      const budgetRange = userPrefs?.travelPreferences?.budgetRange || 'medium';
+      const preferredRegions = userPrefs?.travelPreferences?.preferredRegions || [];
+      const crowdTolerance = userPrefs?.travelStyle?.crowdTolerance || 'neutral';
+      const activityIntensity = userPrefs?.travelStyle?.activityIntensity || 'moderate';
+      const travelDuration = userPrefs?.travelPreferences?.travelDuration || 7;
+
       // 1. Interest alignment (20 points max)
       const interestScores = {
-        beach: ['coast', 'Hammamet', 'Djerba', 'Sousse', 'Mahdia'].includes(dest.name) ? 5 : 0,
+        beach: dest.bestFor?.includes('beach') ? 5 : 0,
         cultureHistory: dest.bestFor?.includes('cultureHistory') ? 5 : 0,
         desertAdventure: dest.bestFor?.includes('desertAdventure') ? 5 : 0,
         foodGastronomy: dest.bestFor?.includes('food') ? 5 : 0,
         nightlife: dest.bestFor?.includes('nightlife') ? 3 : 0,
         natureMountains: dest.bestFor?.includes('nature') ? 5 : 0,
         shopping: dest.bestFor?.includes('shopping') ? 3 : 0,
-        relaxationSpa: dest.bestFor?.includes('relaxation') ? 5 : 0,
+        relaxationSpa: dest.bestFor?.includes('relaxation') || dest.bestFor?.includes('spa') ? 5 : 0,
       };
 
-      const userInterests = userPrefs.interests || {};
-      Object.keys(userInterests).forEach((key) => {
-        if (userInterests[key] > 0) {
-          score += (interestScores[key] || 0) * (userInterests[key] / 5);
+      Object.keys(interestScores).forEach((key) => {
+        if (interests[key] > 0) {
+          score += (interestScores[key] || 0) * (interests[key] / 5);
         }
       });
 
@@ -53,18 +62,21 @@ export async function GET(request) {
         low: ['Budget'],
         medium: ['Moderate', 'Budget'],
         high: ['Premium', 'Moderate', 'Budget'],
-        luxury: ['Luxury', 'Premium'],
+        luxury: ['Luxury', 'Premium', 'Budget'],
       };
-      const userBudget = userPrefs.travelPreferences?.budgetRange || 'medium';
-      const budgetTypes = budgetMap[userBudget] || [];
+      const budgetTypes = budgetMap[budgetRange] || budgetMap['medium'];
       const budgetMatch = dest.budgetLevels?.some((b) => budgetTypes.includes(b)) ? 15 : 5;
       score += budgetMatch;
 
       // 3. Region preference (10 points max)
-      if (dest.region === userPrefs.travelPreferences?.preferredRegions?.[0]) {
-        score += 10;
-      } else if (userPrefs.travelPreferences?.preferredRegions?.includes(dest.region)) {
-        score += 7;
+      if (preferredRegions.length > 0) {
+        if (dest.region === preferredRegions[0]) {
+          score += 10;
+        } else if (preferredRegions.includes(dest.region)) {
+          score += 7;
+        }
+      } else {
+        score += 5; // Neutral if no preference
       }
 
       // 4. Travel style match (15 points max)
@@ -76,12 +88,13 @@ export async function GET(request) {
         neutral: 'moderate',
         popular_spots: 'touristy',
       };
-      const expectedCrowd = crowdMap[userPrefs.travelStyle?.crowdTolerance];
+      const expectedCrowd = crowdMap[crowdTolerance] || crowdMap['neutral'];
       if (dest.crowdLevel === expectedCrowd) {
         styleScore += 5;
       } else if (
         (expectedCrowd === 'quiet' && dest.crowdLevel === 'moderate') ||
-        (expectedCrowd === 'moderate' && ['quiet', 'touristy'].includes(dest.crowdLevel))
+        (expectedCrowd === 'moderate' && ['quiet', 'touristy'].includes(dest.crowdLevel)) ||
+        (expectedCrowd === 'touristy' && dest.crowdLevel === 'moderate')
       ) {
         styleScore += 3;
       }
@@ -92,38 +105,30 @@ export async function GET(request) {
         moderate: 'moderate',
         adventurous: 'adventurous',
       };
-      const expectedActivity = activityMap[userPrefs.travelStyle?.activityIntensity];
+      const expectedActivity = activityMap[activityIntensity] || activityMap['moderate'];
       if (dest.activityLevel === expectedActivity) {
         styleScore += 5;
       } else if (
         (expectedActivity === 'relaxed' && dest.activityLevel === 'moderate') ||
-        (expectedActivity === 'moderate' && ['relaxed', 'adventurous'].includes(dest.activityLevel))
+        (expectedActivity === 'moderate' && ['relaxed', 'adventurous'].includes(dest.activityLevel)) ||
+        (expectedActivity === 'adventurous' && dest.activityLevel === 'moderate')
       ) {
         styleScore += 3;
-      }
-
-      // Accommodation match
-      const hasPreferredAccommodation = dest.accommodationTypes?.some((a) =>
-        userPrefs.travelStyle?.accommodationType?.includes(a)
-      );
-      if (hasPreferredAccommodation) {
-        styleScore += 5;
       }
 
       score += styleScore;
 
       // 5. Trip duration bonus (10 points max)
-      const tripDays = userPrefs.travelPreferences?.travelDuration || 7;
-      if (tripDays <= 3 && dest.travelTime?.fromTunis?.includes('1 hour')) {
+      if (travelDuration <= 3 && dest.travelTime?.fromTunis?.includes('1')) {
         score += 8;
-      } else if (tripDays <= 5 && dest.travelTime?.fromTunis?.includes('2 hours')) {
+      } else if (travelDuration <= 5 && dest.travelTime?.fromTunis?.includes('2')) {
         score += 6;
-      } else if (tripDays > 7) {
-        score += 5; // Longer trips can handle longer travel
+      } else if (travelDuration > 7) {
+        score += 5;
       }
 
       // 6. Family friendly bonus (5 points)
-      if (userPrefs.travelPreferences?.travelerType === 'family' && dest.familyFriendly) {
+      if (userPrefs?.travelPreferences?.travelerType === 'family' && dest.familyFriendly) {
         score += 5;
       }
 
@@ -134,9 +139,26 @@ export async function GET(request) {
     });
 
     // Sort by relevance score (descending)
-    const sortedRecommendations = scoredDestinations
+    let sortedRecommendations = scoredDestinations
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .slice(0, 10); // Top 10 recommendations
+      .slice(0, 30); // Top 30 recommendations
+
+    // Fetch images from Unsplash API for each recommendation
+    sortedRecommendations = await Promise.all(
+      sortedRecommendations.map(async (rec) => {
+        try {
+          const searchTerm = rec.placeType ? rec.placeType.replace(/_/g, ' ') : rec.name;
+          const imageUrl = await fetchImageFromUnsplash(searchTerm);
+          return {
+            ...rec,
+            imageUrl: imageUrl,
+          };
+        } catch (err) {
+          console.error('Error fetching image for', rec.name, err.message);
+          return rec;
+        }
+      })
+    );
 
     return Response.json(
       {
@@ -151,5 +173,33 @@ export async function GET(request) {
       { error: error.message || 'Failed to generate recommendations' },
       { status: 500 }
     );
+  }
+}
+
+// Fetch image from Unsplash API
+async function fetchImageFromUnsplash(query) {
+  const unsplashAccessKey = process.env.UNSPLASH_ACCESS_KEY || 'PVJKjFyF1NfKJ7dJkLNaUlH6Gaj5dCVwHfRbI3yBWYw';
+  
+  try {
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape&client_id=${unsplashAccessKey}`;
+    const response = await fetch(url, {
+      headers: {
+        'Accept-Version': 'v1',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`Unsplash API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      return data.results[0].urls.regular;
+    }
+    return null;
+  } catch (error) {
+    console.error('Unsplash fetch error:', error.message);
+    return null;
   }
 }
